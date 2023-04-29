@@ -3,6 +3,8 @@ package com.bridgelabz.bookstoreapp.controller;
 import com.bridgelabz.bookstoreapp.dto.*;
 import com.bridgelabz.bookstoreapp.service.IUserBusinessLogics;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,17 +15,17 @@ public class UserController {
     private IUserBusinessLogics iUserServices;
 
     @PostMapping("/register")
-    public ResponseDTO registerUser(@RequestBody UserDTO userDTO){
-        return iUserServices.registerUser(userDTO);
+    public ResponseEntity<ResponseDTO> registerUser(@RequestBody UserDTO userDTO){
+        return new ResponseEntity<ResponseDTO>(new ResponseDTO("User Registered Successfully..", iUserServices.registerUser(userDTO)), HttpStatus.CREATED);
     }
     @PutMapping("/verify")
-    public String verifyUser(@RequestBody VerifyDTO verifyDTO){
-        return iUserServices.verifyAccount(verifyDTO.email, verifyDTO.otp);
+    public ResponseEntity<String> verifyUser(@RequestBody VerifyDTO verifyDTO){
+        return new ResponseEntity<String>(iUserServices.verifyAccount(verifyDTO.email, verifyDTO.otp), HttpStatus.OK);
     }
 
     @GetMapping("/login")
-    public String login(@RequestBody LoginDTO loginDTO){
-        return iUserServices.loginUser(loginDTO.getEmail(),loginDTO.getPassword());
+    public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO){
+        return new ResponseEntity<String>(iUserServices.loginUser(loginDTO.getEmail(),loginDTO.getPassword()), HttpStatus.ACCEPTED);
     }
 
     @PutMapping("/forgot")
@@ -33,22 +35,27 @@ public class UserController {
 
     @PutMapping("/reset")
     public String resetPassword(@RequestBody ForgotResetDTO forgotResetDTO){
-        return iUserServices.resetPassword(forgotResetDTO.getEmail(), forgotResetDTO.getPassword(), forgotResetDTO.getConfirmPassword());
+        return iUserServices.resetPassword(forgotResetDTO.getToken(), forgotResetDTO.getPassword(), forgotResetDTO.getConfirmPassword());
     }
 
     @PutMapping("/updateUser")
-    public ResponseDTO updateByEmail(@RequestBody UserDTO userDTO){
-        return iUserServices.updateByEmail(userDTO);
+    public ResponseEntity<ResponseDTO> updateByEmail(@RequestBody UserDTO userDTO){
+        return new ResponseEntity<ResponseDTO>(new ResponseDTO("User Details Updated Successfully..", iUserServices.updateByEmail(userDTO)), HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/getUser")
-    public ResponseDTO getUserByEmailId(@RequestBody UserDTO userDTO){
-        return iUserServices.getUserByEmailId(userDTO.email);
+    public ResponseEntity<ResponseDTO> getUserByEmailId(@RequestParam String email){
+        return new ResponseEntity<ResponseDTO>(new ResponseDTO(":: User Detail :: ", iUserServices.getUserByEmailId(email)), HttpStatus.FOUND);
     }
 
     @DeleteMapping("/deleteUser")
     public String deleteUserByEmailId(@RequestBody LoginDTO loginDTO){
         return iUserServices.deleteUserByEmailId(loginDTO.email);
+    }
+
+    @PutMapping("/verifyToken/{token}")
+    public String verifyUsingToken(@PathVariable String token){
+        return iUserServices.verifyUsingToken(token);
     }
 
 }

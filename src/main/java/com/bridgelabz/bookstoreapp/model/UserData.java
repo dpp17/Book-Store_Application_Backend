@@ -21,7 +21,6 @@ public class UserData {
     private long userId;
     private String firstName;
     private String lastName;
-    private String kyc;
     private LocalDate dob;
     private LocalDate registeredDate;
     private LocalDate updatedDate;
@@ -29,19 +28,18 @@ public class UserData {
     private String password;
     private int otp;
     private boolean verify;
-    private LocalDate purchaseDate;
-    private LocalDate expiryDate;
 
-    public UserData(UserDTO userDTO) {
+    public void updatedDate(UserDTO userDTO) {
         this.firstName = userDTO.getFirstName();
         this.lastName = userDTO.getLastName();
-        this.kyc = userDTO.getKyc();
         this.dob = userDTO.getDob();
-        this.registeredDate = userDTO.getRegisteredDate();
-        this.updatedDate = userDTO.getUpdatedDate();
+        this.registeredDate = LocalDate.now();
         this.email = userDTO.getEmail();
         this.password = userDTO.getPassword();
-        this.purchaseDate = userDTO.getPurchaseDate();
-        this.expiryDate = userDTO.getExpiryDate();
     }
+
+    public UserData(UserDTO userDTO) {
+        this.updatedDate(userDTO);
+    }
+
 }

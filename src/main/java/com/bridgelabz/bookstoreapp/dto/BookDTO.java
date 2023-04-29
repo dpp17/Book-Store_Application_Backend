@@ -18,9 +18,6 @@ public class BookDTO {
     @NotBlank(message = "bookDescription Cannot be empty")
     public String bookDescription;
 
-    @NotBlank(message = "bookDescription Cannot be empty")
-    public String bookLogoMultiPart;
-
     @NotBlank(message = "bookPrice Cannot be empty")
     public double bookPrice;
 

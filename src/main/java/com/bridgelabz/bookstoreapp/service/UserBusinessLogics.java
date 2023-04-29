@@ -10,6 +10,7 @@ import com.bridgelabz.bookstoreapp.utility.JWTToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Random;
 
 @Service
@@ -23,6 +24,10 @@ private EmailServices emailService;
 @Autowired
 private JWTToken jwtToken;
 
+private UserData checkIfUserExist(String email){
+    return userRepo.getUserIDByEmail(email);
+}
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                                    :: UserBook - Registration ::                                   //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,43 +35,39 @@ private JWTToken jwtToken;
 
     @Override
     public ResponseDTO registerUser(UserDTO userDTO) {
-        Random random = new Random();
-        UserData registerNewUser = new UserData(userDTO);
-        registerNewUser.setOtp((random.nextInt(9000)+999));
+        UserData data = checkIfUserExist(userDTO.getEmail());
 
-        String isEmailPresent = userRepo.getEmailByEmail(registerNewUser.getEmail());
-
-        if(isEmailPresent == null){
+        if(data == null){
+            Random random = new Random();
+            UserData registerNewUser = new UserData(userDTO);
+            registerNewUser.setOtp((random.nextInt(9000)+999));
             userRepo.save(registerNewUser);
             emailService.sendEmail(userDTO.getEmail(),"User DataBase Account Verification",
-                    "Hey... "+(userDTO.getFirstName())+"\n\n Your OTP for VERIFICATION :: "+registerNewUser.getOtp()+
-                    "\n\n Click link to verify your account :: http://localhost:8080/userBook/verify");
+                    "Hey... " + (userDTO.getFirstName()) +
+                            "\n\n Your OTP for VERIFICATION :: "+registerNewUser.getOtp()+
+                            "\n\n Click link to verify your account :: http://localhost:8080/userBook/verify");
             return new ResponseDTO("User_Information",registerNewUser);
         }
-        return new ResponseDTO("User with same Email ID already exist..",userRepo.getEmailByEmail(userDTO.getEmail()));
+        return new ResponseDTO("User with same Email ID already exist..", data);
     }
-// ==>>  check if email is present or not
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                                   :: UserBook - Verify Account ::                                  //
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     @Override
     public String verifyAccount(String email, int otp) {
-
-        String idStr = userRepo.getUserIDByEmail(email);
-        if(null != idStr){
-            long id = Integer.parseInt(idStr);
-            UserData data = userRepo.findById(id).orElseThrow(()-> new UserIDNotFoundException(" User not found with email id :: " + email));
+        UserData data = checkIfUserExist(email);
+        if(null != data){
             if(data.getOtp() == otp){
                 data.setVerify(true);
-                userRepo.deleteById(id);
                 userRepo.save(data);
                 emailService.sendEmail(email,"Account verified successful",
                     "Hello Sir/Mam, \n\n Your Account is successfully verified !!! ");
             return "Account Verified successfully";
             }
         }
-        return "Invalid OTP";
+        return " User not found with email id :: " + email;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,13 +76,11 @@ private JWTToken jwtToken;
 
     @Override
     public String loginUser(String email,String password) {
-        String idStr = userRepo.getUserIDByEmail(email);
-        if(null != idStr){
-                long id = Integer.parseInt(idStr);
-                UserData data = userRepo.findById(id).orElseThrow(()-> new UserIDNotFoundException(" User not found with email id :: " + email));
+        UserData data = checkIfUserExist(email);
+        if(null != data){
                 if(data.getPassword().equals(password)){
-                    String token = jwtToken.createToken(id);
-                    return ":: Welcome " + data.getFirstName() + " " + data.getLastName() + " ::";
+                    String token = jwtToken.createToken(data.getUserId());
+                    return ":: Welcome " + data.getFirstName() + " " + data.getLastName() + " ::" + "\n\n" + token;
                 }
         }
             return "!!!!!!!!!!!! User with Email ID :: " + email + " doesn't exists !!!!!!!!!!!!!!";
@@ -94,8 +93,8 @@ private JWTToken jwtToken;
 
     @Override
     public String getForgottenPassword(String email) {
-        String idStr = userRepo.getUserIDByEmail(email);
-        if(null != idStr) {
+        UserData data = checkIfUserExist(email);
+        if(null != data) {
             emailService.sendEmail(email,"Create New Password",
                     "Hello Sir/Mam, \n\n Create new password from the link :: http://localhost:8080/userBook/reset" );
             return "Create new password from your registered email id. A link has been sent :: http://localhost:8080/userBook/reset";
@@ -110,12 +109,9 @@ private JWTToken jwtToken;
     @Override
     public String resetPassword(String email, String password, String confirmPassword) {
         if(password.equals(confirmPassword)){
-            String idStr = userRepo.getUserIDByEmail(email);
-            if(null != idStr) {
-                long id = Integer.parseInt(idStr);
-                UserData data = userRepo.findById(id).orElseThrow(()-> new UserIDNotFoundException(" User not found with email id :: " + email));
+            UserData data = checkIfUserExist(email);
+            if(null != data) {
                 data.setPassword(confirmPassword);
-                userRepo.deleteById(id);
                 userRepo.save(data);
                 return " Your Password Updated Successfully !!";
             }
@@ -131,19 +127,11 @@ private JWTToken jwtToken;
 
     @Override
     public ResponseDTO updateByEmail(UserDTO userDTO) {
-        String idStr = userRepo.getUserIDByEmail(userDTO.getEmail());
-        if(null != idStr){
-            long id = Integer.parseInt(idStr);
-            UserData data = userRepo.findById(id).orElseThrow(()-> new UserIDNotFoundException(" User not found with email id :: " + userDTO.getEmail()));
-
-
-            data.setFirstName(userDTO.getFirstName());
-            data.setEmail(userDTO.getEmail());
-            data.setPassword(userDTO.getPassword());
-
-
+        UserData data = checkIfUserExist(userDTO.getEmail());
+        if(null != data){
+            data.updatedDate(userDTO);
+            data.setUpdatedDate(LocalDate.now());
             userRepo.save(data);
-
             return new ResponseDTO("User Details Updated Successfully....", data);
         }
         return new ResponseDTO("!!!!!!!!!!!! User with Email ID :: " + userDTO.getEmail() + " doesn't exists !!!!!!!!!!!!!!", null);
@@ -156,10 +144,8 @@ private JWTToken jwtToken;
 
     @Override
     public ResponseDTO getUserByEmailId(String email) {
-        String idStr = userRepo.getUserIDByEmail(email);
-        if(null != idStr){
-            long id = Integer.parseInt(idStr);
-            UserData data = userRepo.findById(id).orElseThrow(()-> new UserIDNotFoundException(" User not found with email id :: " + email));
+        UserData data = checkIfUserExist(email);
+        if(null != data){
             return new ResponseDTO("Details :: ", data);
         }
         return new ResponseDTO("!!!!!!!!!!!! User with Email ID :: " + email + " doesn't exists !!!!!!!!!!!!!!", null);
@@ -172,13 +158,28 @@ private JWTToken jwtToken;
 
     @Override
     public String deleteUserByEmailId(String email) {
-        String idStr = userRepo.getUserIDByEmail(email);
-        if(null != idStr){
-            long id = Integer.parseInt(idStr);
-            userRepo.deleteById(id);
+        UserData data = checkIfUserExist(email);
+        if(null != data){
+            userRepo.deleteById(data.getUserId());
             return "User with Email ID :: " + email + " successfully deleted..";
         }
         return "!!!!!!!!!!!! User with Email ID :: " + email + " doesn't exists !!!!!!!!!!!!!!";
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //                                 :: UserBook - Verify Using Token ::                                //
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    @Override
+    public String verifyUsingToken(String token) {
+        long id = jwtToken.decodeToken(token);
+        UserData data = userRepo.findById(id).orElseThrow(()-> new UserIDNotFoundException(" User not found with token :: " + token));;
+        if(data.isVerify()){
+            return " Data is already verified..";
+        }
+        data.setVerify(true);
+        userRepo.save(data);
+        return " Data verified Successfully..";
     }
 
 

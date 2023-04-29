@@ -38,21 +38,4 @@ public class UserDTO {
     @PastOrPresent(message = "registeredDate should be past or today's date")
     public LocalDate registeredDate;
 
-    @JsonFormat(pattern = "dd MM yyyy")
-    @NotNull(message = "updatedDate should not be empty")
-    @PastOrPresent(message = "updatedDate should be past or today's date")
-    public LocalDate updatedDate;
-
-    @JsonFormat(pattern = "dd MM yyyy")
-    @NotNull(message = "purchaseDate should not be empty")
-    @PastOrPresent(message = "purchaseDate should be past or today's date")
-    public LocalDate purchaseDate;
-
-    @JsonFormat(pattern = "dd MM yyyy")
-    @NotNull(message = "expiryDate should not be empty")
-    @PastOrPresent(message = "expiryDate should be past or today's date")
-    public LocalDate expiryDate;
-
-    private String kyc;
-
 }

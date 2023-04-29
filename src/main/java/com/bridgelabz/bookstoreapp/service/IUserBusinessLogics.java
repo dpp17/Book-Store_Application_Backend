@@ -20,4 +20,6 @@ public interface IUserBusinessLogics {
     ResponseDTO getUserByEmailId(String email);
 
     String deleteUserByEmailId(String email);
+
+    String verifyUsingToken(String token);
 }
