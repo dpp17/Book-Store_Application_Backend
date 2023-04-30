@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -71,8 +72,13 @@ public class CartBusinessLogics implements ICartBusinessLogics{
     }
 
     @Override
-    public List<CartData> findAllCarts(String token) {
-        List<CartData> cartDataList = cartRepo.findAll();
-        return cartDataList;
+    public List<CartData> findCartItemsByToken(String token) {
+        long userId = jwtToken.decodeToken(token);
+        return cartRepo.findAll().stream().filter(data-> data.getUserData().getUserId() == userId).toList();
+    }
+
+    @Override
+    public List<CartData> findAllCarts() {
+        return cartRepo.findAll();
     }
 }

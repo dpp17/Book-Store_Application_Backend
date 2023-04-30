@@ -10,4 +10,5 @@ public interface BookRepo extends JpaRepository<BookData,Long> {
 
     @Query(value = "select * from book_store.user_data where name = :name",nativeQuery = true)
     BookData getBookByName(String name);
+
 }

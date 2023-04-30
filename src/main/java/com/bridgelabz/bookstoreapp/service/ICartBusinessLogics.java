@@ -15,5 +15,7 @@ public interface ICartBusinessLogics {
 
     ResponseDTO updateQuantity(String token, long cartId, long quantity);
 
-    List<CartData> findAllCarts(String token);
+    List<CartData> findCartItemsByToken(String token);
+
+    List<CartData> findAllCarts();
 }

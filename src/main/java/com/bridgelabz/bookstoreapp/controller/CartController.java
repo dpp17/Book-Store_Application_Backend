@@ -38,11 +38,15 @@ public class CartController {
         return new ResponseEntity<ResponseDTO>(new ResponseDTO("Updated Details", iCartBusinessLogics.updateQuantity(token,cartId,quantity)), HttpStatus.ACCEPTED);
     }
 
-    @GetMapping("/getAllCart/{token}")
-    public List<CartData> findAllCarts(@PathVariable String token){
-        return iCartBusinessLogics.findAllCarts(token);
+    @GetMapping("/getAllCart")
+    public List<CartData> findAllCarts(){
+        return iCartBusinessLogics.findAllCarts();
     }
 
+    @GetMapping("/getCartItemByToken/{token}")
+    public List<CartData> findCartItemsByToken(String token){
+        return iCartBusinessLogics.findCartItemsByToken(token);
+    }
 
 
 }
