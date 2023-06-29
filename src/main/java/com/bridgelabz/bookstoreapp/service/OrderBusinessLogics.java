@@ -43,20 +43,35 @@ public class OrderBusinessLogics implements IOrderBusinessLogics{
     public ResponseDTO placeOrder(String token, OrderDTO orderDTO) {
         long userId = jwtToken.decodeToken(token);
         UserData userData = userRepo.findById(userId).orElseThrow(() -> new UserIDNotFoundException("User ID :: " + userId + " not Registered.."));
-        List<BookData> bookList = cartRepo.findAll().stream().filter(data-> data.getUserData().getUserId() == userId).map(CartData::getBookData).toList();
-//        System.out.println(bookList.toString());
-        List<OrderData> orderDataList = new ArrayList<>();      // to return all orders if multiple orders are present
-        double price = 0;
-        OrderData orderData = null;
-        for (int i = 0; i < bookList.size(); i++) {
-            price = price + bookList.get(i).getBookQuantity() * bookList.get(i).getBookPrice();
-            orderData = new OrderData(orderDTO, userData,bookList.get(i), bookList.get(i).getBookPrice()*bookList.get(i).getBookQuantity(), bookList.get(i).getBookQuantity());
-            orderRepo.save(orderData);
-           orderDataList.add(orderData);
+
+        List<CartData> cartDataList = cartRepo.findAll().stream().filter(data-> data.getUserData().getUserId() == userId).toList();
+
+        if(!cartDataList.isEmpty()){
+            List<BookData> bookList = cartRepo.findAll().stream().filter(data-> data.getUserData().getUserId() == userId).map(CartData::getBookData).toList();
+            List<OrderData> orderDataList = new ArrayList<>();      // to return all orders if multiple orders are present
+            double price = 0;
+            OrderData orderData = null;
+            for (int i = 0; i < bookList.size(); i++) {
+                price = price + bookList.get(i).getBookQuantity() * bookList.get(i).getBookPrice();
+                orderData = new OrderData(orderDTO, userData,cartDataList.get(i).getBookData(), cartDataList.get(i).getBookData().getBookPrice()*cartDataList.get(i).getQuantity(), cartDataList.get(i).getQuantity());
+                orderRepo.save(orderData);
+                cartRepo.deleteById(cartDataList.get(i).getCartId());
+                System.out.println("Cart ID Cleared :: " + cartDataList.get(i).getCartId());
+                orderDataList.add(orderData);
+                emailServices.sendEmail(userData.getEmail(), "Order Details", "Hello " + userData.getFirstName() + ","
+                        + "\n Your order has been placed successfully..\n\n\n Your Order details ::  \n\n Order Date :: " + orderDataList.get(i).getOrderDate() +
+                        "\n Order Recipient :: "+ orderDataList.get(i).getUserId().getFirstName()+" "+orderDataList.get(i).getUserId().getLastName() +
+                        "\n Recipient Address :: "+ orderDataList.get(i).getAddress() +
+                        "\n Book Name :: "+ orderDataList.get(i).getBookId().getBookName() +", by "+ orderDataList.get(i).getBookId().getBookAuthor() +
+                        "\n Book Description :: "+ orderDataList.get(i).getBookId().getBookDescription() +
+                        "\n Book Price :: Rs "+ orderDataList.get(i).getBookId().getBookPrice() +
+                        "\n Order Quantity :: "+orderDataList.get(i).getQuantity()+
+                        "\n Total Order Price :: Rs"+ orderDataList.get(i).getTotalPrice() +
+                        "\n\n Regards,\n\n People's Mart");
+            }
+            return new ResponseDTO("Order Placed SuccessFully..\n\n Total order Price :: " + price, orderDataList);
         }
-        emailServices.sendEmail(userData.getEmail(), "Order Details", "Hello " + userData.getFirstName() + ","
-                + "\n\n Your order has been placed successfully..\n\n Your Order details :: " + orderDataList + "\n\n Regards,\n\n People's Mart");
-        return new ResponseDTO("Order Placed SuccessFully..\n\n Total order Price :: " + price, orderDataList);
+        return new ResponseDTO("Cart is Empty..Add Books to place Order.. ",null);
     }
 
     @Override
@@ -73,7 +88,13 @@ public class OrderBusinessLogics implements IOrderBusinessLogics{
     @Override
     public ResponseDTO getAllOrders() {
         List<OrderData> orderDataList = orderRepo.findAll();
-        return new ResponseDTO("List of All Orders..", orderDataList);
+        List<OrderData> orderNotCancelled = new ArrayList<>();
+        for(int i=0;i<orderDataList.size();i++){
+            if(!orderDataList.get(i).isCancel()){
+                orderNotCancelled.add(orderDataList.get(i));
+            }
+        }
+        return new ResponseDTO("List of All Orders..", orderNotCancelled);
     }
 
     @Override

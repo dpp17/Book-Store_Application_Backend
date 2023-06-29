@@ -29,9 +29,6 @@ public class OrderData {
 
     @JsonIgnoreProperties(value = {"applications", "hibernateLazyInitializer"})
     @ManyToOne
-//@ElementCollection
-//@CollectionTable(name = "orderDetails", joinColumns = @JoinColumn(name="orderedId"))
-//@Column(name = "orderedBook", unique = false)
     private BookData bookId;
     private boolean cancel;
 
